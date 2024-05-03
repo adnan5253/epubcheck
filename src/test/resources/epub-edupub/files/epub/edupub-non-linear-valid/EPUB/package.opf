@@ -11,10 +11,10 @@
 <manifest>
   <item id="content_001"  href="content_001.xhtml" media-type="application/xhtml+xml"/>
   <item id="nav"  href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
-  <item id="non" href="nonlinear.xhtml" media-type="application/xhtml+xml" />
+  <item id="nonlinear" href="nonlinear.xhtml" media-type="application/xhtml+xml" />
 </manifest>
 <spine>
   <itemref idref="content_001" />
-  <itemref idref="non" linear="no" />
+  <itemref idref="nonlinear" linear="no" />
 </spine>
 </package>

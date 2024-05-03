@@ -1,7 +1,6 @@
-## XHTML5
-include "./mod/epub-xhtml.rnc"
 
-## SVG and MathML
+# #####################################################################
+##  RELAX NG Schema for EPUB: EPUB XHTML (+ SVG, + MathML)            #
+# #####################################################################
 
-include "./mod/epub-xhtml-mathml3.rnc"
-include "./mod/epub-xhtml-svg11.rnc"
+include "./mod/epub-xhtml-svg-mathml.rnc"

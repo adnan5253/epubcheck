@@ -89,6 +89,11 @@ Feature: EPUB 2 ▸ Open Packaging Format ▸ Package Document Checks
     When checking EPUB 'metadata-creator-role-unknown-error.opf'
     Then error OPF-052 is reported
     And no other errors or warnings are reported
+
+  Scenario: Accet a 'dc:creator' metadata with an 'edc' role
+    See https://github.com/w3c/epubcheck/issues/1521
+    When checking EPUB 'metadata-creator-role-edc-valid.opf'
+    And no errors or warnings are reported
   
   Scenario: an identifier starting with "urn:uuid:" should be a valid UUID  
     When checking EPUB 'metadata-identifier-uuid-as-urn-invalid-warning.opf'
@@ -122,9 +127,15 @@ Feature: EPUB 2 ▸ Open Packaging Format ▸ Package Document Checks
     Then warning OPF-037 is reported
     And no other errors or warnings are reported
 
-  Scenario: item paths should not contain spaces 
+  Scenario: item paths should not contain spaces (even when properly encoded) 
     When checking EPUB 'item-href-contains-spaces-warning.opf'
-    Then warning PKG-010 is reported
+    Then warning PKG-010 is reported (path with space)
+    And no other errors or warnings are reported
+    
+  Scenario: item paths should not contain spaces 
+    When checking EPUB 'item-href-contains-spaces-unencoded-error.opf'
+    Then error RSC-020 is reported (invalid URL)
+    Then warning PKG-010 is reported (path with space)
     And no other errors or warnings are reported
   
   ### 2.3.1 Fallback Items

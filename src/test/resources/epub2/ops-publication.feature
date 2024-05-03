@@ -15,24 +15,13 @@ Feature: EPUB 2 ▸ Open Publication Structure ▸ Full Publication Checks
 
   ## 1.0: Overview
 
-  #### 1.3.2 Relationship to XML Namespaces
-
-  #FIXME HTM-049 seems unnecessary
-  Scenario: Report the absence of a namespace declaration
-    When checking EPUB 'ops-xhtml-namespace-none-error'
-    Then the following errors are reported
-      | RSC-005 | elements from namespace "" are not allowed |
-      | HTM-049 | Html element does not have an xmlns set    |
-    And no other errors or warnings are reported
-
   ### 1.4: Conformance
 
   ####  1.4.1.2: XHTML Content Document Requirements
 
-  Scenario: Report an XHTML content document without an `.xhtml` extension
-    When checking EPUB 'ops-xhtml-extension-error'
-    Then warning HTM-014 is reported
-    And no other errors or warnings are reported
+  Scenario: Verify an XHTML content document without an `.xhtml` extension
+    When checking EPUB 'ops-xhtml-unusual-extension-valid'
+    Then no errors or warnings are reported
 
   Scenario: Report a broken internal link in XHTML
     When checking EPUB 'ops-xhtml-hyperlink-to-missing-fragment-error'
@@ -56,8 +45,6 @@ Feature: EPUB 2 ▸ Open Publication Structure ▸ Full Publication Checks
 
   ### 2.3 Element and and Attribute Semantic Differences from and Restrictions beyond XHTML 1.1
 
-  #FIXME this shouldn't be an error, a warning at most
-  Scenario: Report usage of Javascript in XHTML
-    When checking EPUB 'ops-xhtml-script-error'
-    Then error SCP-004 is reported
-    And no other errors or warnings are reported
+  Scenario: Verify usage of Javascript in XHTML
+    When checking EPUB 'ops-xhtml-script-valid'
+    Then no errors or warnings are reported

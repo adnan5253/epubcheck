@@ -68,7 +68,6 @@ Feature: EPUB 2 ▸ Open Container Format ▸ Full Publication Checks
   Scenario: Report a missing 'container.xml' file
     When checking EPUB 'ocf-metainf-container-file-missing-fatal'
     Then fatal error RSC-002 is reported
-    And error RSC-001 is reported (unnecessary, but generic error for missing resources)
     Then no errors or warnings are reported
 
   Scenario: Report multiple OPF rootfiles in the 'container.xml' file
@@ -84,17 +83,18 @@ Feature: EPUB 2 ▸ Open Container Format ▸ Full Publication Checks
   Scenario: Report a missing 'full-path' attribute on the rootfile element of the 'container.xml' file
     When checking EPUB 'ocf-metainf-container-rootfile-full-path-missing-error'
     Then error OPF-016 is reported
+    And error RSC-003 is reported
     And no other errors or warnings are reported
 
   Scenario: Report an empty 'full-path' attribute on the rootfile element of the 'container.xml' file
     When checking EPUB 'ocf-metainf-container-rootfile-full-path-empty-error'
     Then error OPF-017 is reported
+    And error RSC-003 is reported
     And no other errors or warnings are reported
 
   Scenario: Report a missing OPF document
     When checking EPUB 'ocf-opf-missing-fatal'
     Then fatal error OPF-002 is reported
-    And error RSC-001 is reported (unnecessary, but generic error for missing resources)
     And no other errors or warnings are reported
 
   ## 4. ZIP Container

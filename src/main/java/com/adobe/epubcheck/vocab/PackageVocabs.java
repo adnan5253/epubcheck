@@ -3,6 +3,7 @@ package com.adobe.epubcheck.vocab;
 import java.util.Set;
 
 import com.adobe.epubcheck.opf.ValidationContext;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
@@ -37,12 +38,20 @@ public final class PackageVocabs
     TITLE_TYPE
   }
 
+  public static EnumVocab<META_PROPERTIES_CAMEL> META_VOCAB_CAMEL = new EnumVocab<META_PROPERTIES_CAMEL>(
+      META_PROPERTIES_CAMEL.class, CaseFormat.LOWER_CAMEL, META_VOCAB_URI);
+
+  public static enum META_PROPERTIES_CAMEL
+  {
+    PAGE_BREAK_SOURCE,
+  }
+
   public static EnumVocab<ITEM_PROPERTIES> ITEM_VOCAB = new EnumVocab<ITEM_PROPERTIES>(
       ITEM_PROPERTIES.class, ITEM_VOCAB_URI);
 
   public static enum ITEM_PROPERTIES
   {
-    COVER_IMAGE("image/gif", "image/jpeg", "image/png", "image/svg+xml"),
+    COVER_IMAGE("image/*"),
     DATA_NAV("application/xhtml+xml"),
     DICTIONARY("application/vnd.epub.search-key-map+xml"),
     GLOSSARY("application/vnd.epub.search-key-map+xml", "application/xhtml+xml"),
@@ -59,12 +68,33 @@ public final class PackageVocabs
 
     private ITEM_PROPERTIES(String... types)
     {
-      this.types = new ImmutableSet.Builder<String>().add(types).build();
+      ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<String>();
+      for (String type : types)
+      {
+        if (type.endsWith("/*"))
+        {
+          builder.add(type.substring(0, type.length() - 1));
+        }
+        else
+        {
+          builder.add(type);
+        }
+      }
+      this.types = builder.build();
     }
 
-    public Set<String> allowedOnTypes()
+    public boolean isAllowedForType(String mimetype)
     {
-      return types;
+      if (mimetype == null) return false;
+      for (String allowedType : types)
+      {
+        if (allowedType.equals(mimetype)
+            || allowedType.endsWith("/") && mimetype.startsWith(allowedType))
+        {
+          return true;
+        }
+      }
+      return false;
     }
   }
 
@@ -82,7 +112,8 @@ public final class PackageVocabs
 
   public static enum LINKREL_PROPERTIES implements PropertyStatus
   {
-    ACQUIRE,
+    ACQUIRE, // note: no longer defined in EPUB 3.3, but still accepted for
+             // backward compatibility with the EPUB Previews specification
     ALTERNATE,
     MARC21XML_RECORD(DEPRECATED),
     MODS_RECORD(DEPRECATED),
@@ -123,7 +154,6 @@ public final class PackageVocabs
   public static enum LINK_PROPERTIES
   {
     ONIX,
-    XMP;
   }
 
   private PackageVocabs()

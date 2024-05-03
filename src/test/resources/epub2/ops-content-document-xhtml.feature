@@ -13,6 +13,14 @@ Feature: EPUB 2 ▸ Open Publication Structure ▸ XHTML Document Checks
     And EPUBCheck configured to check EPUB 2.0.1 rules
     And test files located at '/epub2/files/ops-document-xhtml/'
 
+  ## 1.0: Overview
+  ### 1.3.2 Relationship to XML Namespaces
+
+  Scenario: Report the absence of a namespace declaration
+    When checking document 'html-no-namespace-error.xhtml'
+    Then error RSC-005 is reported
+    And the message contains 'elements from namespace "" are not allowed'
+    And no other errors or warnings are reported
 
   #  2.0 OPS Content Document Vocabularies
 
@@ -67,6 +75,11 @@ Feature: EPUB 2 ▸ Open Publication Structure ▸ XHTML Document Checks
   
   Scenario: Verify attributes allowed on `ins` and `del` are not restricted (issue 293)
     When checking document 'edit-attributes-valid.xhtml'
+    Then no errors or warnings are reported
+  
+  Scenario: Verify `ins` and `del` elements can contain block content
+    See https://github.com/w3c/epubcheck/issues/1522
+    When checking document 'edit-block-content-valid.xhtml'
     Then no errors or warnings are reported
 
   ### Identifiers

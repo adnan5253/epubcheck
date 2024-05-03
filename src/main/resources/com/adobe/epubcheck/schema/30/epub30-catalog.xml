@@ -18,6 +18,12 @@
    <system systemId="http://www.idpf.org/epub/30/schema/epub-svg-30.sch"
            uri="epub-svg-30.sch"/>
                         
+   <system systemId="http://www.idpf.org/epub/30/schema/epub-svg-informative.nvdl"
+           uri="epub-svg-informative.nvdl"/>
+                        
+   <system systemId="http://www.idpf.org/epub/30/schema/epub-svg-informative.rnc"
+           uri="epub-svg-informative.rnc"/>
+                        
    <system systemId="http://www.idpf.org/epub/30/schema/epub-xhtml-30.nvdl"
            uri="epub-xhtml-30.nvdl"/>
                         
@@ -52,13 +58,9 @@
            uri="mod/epub-ssml-attrs.rnc"/>
    <system systemId="epub-ssml-attrs.rnc" uri="mod/epub-ssml-attrs.rnc"/>
                         
-   <system systemId="http://www.idpf.org/epub/30/schema/mod/epub-svg11.rnc"
-           uri="mod/epub-svg11.rnc"/>
-   <system systemId="epub-svg11.rnc" uri="mod/epub-svg11.rnc"/>
-                        
-   <system systemId="http://www.idpf.org/epub/30/schema/mod/epub-svg11-re.sch"
-           uri="mod/epub-svg11-re.sch"/>
-   <system systemId="epub-svg11-re.sch" uri="mod/epub-svg11-re.sch"/>
+   <system systemId="http://www.idpf.org/epub/30/schema/mod/epub-svg-inc.rnc"
+           uri="mod/epub-svg-inc.rnc"/>
+   <system systemId="epub-svg-inc.rnc" uri="mod/epub-svg-inc.rnc"/>
                         
    <system systemId="http://www.idpf.org/epub/30/schema/mod/epub-switch.rnc"
            uri="mod/epub-switch.rnc"/>

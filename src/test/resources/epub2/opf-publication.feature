@@ -72,10 +72,12 @@ Feature: EPUB 2 ▸ Open Packaging Format ▸ Full Publication Checks
     Then warning OPF-035 is reported
     And no other errors or warnings are reported
 
-  Scenario: Report a reference to a resource that is not listed in the manifest
-    When checking EPUB 'opf-manifest-resource-undeclared-warning'
-    Then warning OPF-003 is reported
-    And no other errors or warnings are reported
+  Scenario: Report (usage) a resource that is not listed in the manifest
+    Given the reporting level is set to usage  
+    When checking EPUB 'opf-manifest-resource-undeclared-usage'
+    Then usage OPF-003 is reported
+    But no other usages are reported
+    And no errors or warnings are reported
 
   Scenario: Verify that operating system files (`.DS_STORE`, `thumbs.db`) are ignored (issue 256)
     When checking EPUB 'opf-manifest-os-files-ignore-valid'
@@ -94,7 +96,7 @@ Feature: EPUB 2 ▸ Open Packaging Format ▸ Full Publication Checks
   Scenario: Report a manifest fallback that does not resolve to a resource in the publication
     When checking EPUB 'opf-fallback-non-resolving-error'
     Then error OPF-040 is reported (missing resource)
-    And error MED-003 is reported (fallback isn't provided)
+    And error RSC-032 is reported (fallback isn't provided)
     And no other errors or warnings are reported
 
 
@@ -102,17 +104,14 @@ Feature: EPUB 2 ▸ Open Packaging Format ▸ Full Publication Checks
 
   Scenario: Report a missing spine
     When checking EPUB 'opf-spine-missing-error'
-    Then the following errors are reported
-      | RSC-005 | missing required element "spine" |
-      | NCX-002 | toc attribute was not found      | # side effect
-    And fatal error OPF-019 is reported
+    Then error RSC-005 is reported
+    And the message contains 'missing required element "spine"'
     And no other errors or warnings are reported
 
   Scenario: Report a spine with no 'toc' attribute
     When checking EPUB 'opf-spine-toc-attribute-missing-error'
     Then error RSC-005 is reported
     And the message contains 'missing required attribute "toc"'
-    And error NCX-002 is reported (publication-level check)
     And no other errors or warnings are reported
 
   Scenario: Report a toc attribute pointing to something else than the NCX
@@ -160,7 +159,6 @@ Feature: EPUB 2 ▸ Open Packaging Format ▸ Full Publication Checks
   Scenario: Report a legacy OEBPS 1.2 publication
     When checking EPUB 'opf-legacy-oebps12-error'
     Then error OPF-001 is reported (version not found)
-    And fatal error OPF-019 is reported (spine not found)
     And no other errors or warnings are reported
 
   # FIXME there’s no real point in reporting these since OEBPS 1.2 is not fully supported

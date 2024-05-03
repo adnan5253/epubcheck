@@ -39,11 +39,13 @@ public enum XMLValidators
   SVG_20_NVDL("schema/20/rng/ops20-svg.nvdl"),
   SVG_30_RNC("schema/30/epub-svg-30.rnc"),
   SVG_30_NVDL("schema/30/epub-svg-30.nvdl"),
+  SVG_30_INFORMATIVE_NVDL("schema/30/epub-svg-30-informative.nvdl", false),
   SVG_30_SCH("schema/30/epub-svg-30.sch"),
   XHTML_20_NVDL("schema/20/rng/ops20.nvdl"),
   XHTML_20_SCH("schema/20/sch/xhtml.sch"),
   XHTML_30_SCH("schema/30/epub-xhtml-30.sch"),
   XHTML_30_RNC("schema/30/epub-xhtml-30.rnc"),
+  XHTML_30_NVDL("schema/30/epub-xhtml-30.nvdl"),
   XHTML_EDUPUB_STRUCTURE_SCH("schema/30/edupub/edu-structure.sch"),
   XHTML_EDUPUB_SEMANTICS_SCH("schema/30/edupub/edu-semantics.sch"),
   XHTML_DATANAV_SCH("schema/30/datanav/datanav-xhtml.sch"),
@@ -55,7 +57,12 @@ public enum XMLValidators
 
   private XMLValidators(String schemaName)
   {
-    val = new XMLValidator(schemaName);
+    this(schemaName, true);
+  }
+
+  private XMLValidators(String schemaName, boolean isNormative)
+  {
+    this.val = new XMLValidator(schemaName, isNormative);
   }
 
   public XMLValidator get()

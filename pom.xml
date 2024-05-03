@@ -11,13 +11,12 @@
 
     <groupId>org.w3c</groupId>
     <artifactId>epubcheck</artifactId>
-    <version>4.2.5-SNAPSHOT</version>
+    <version>5.1.1-SNAPSHOT</version>
 
     <packaging>jar</packaging>
 
-    <name>EPUBCheck :: Validation Tool for EPUB</name>
-    <description>EPUBCheck is a tool to validate the conformance of EPUB publications against
-      the EPUB specifications. EPUBCheck can be run as a standalone command-line tool or used
+    <name>EPUBCheck :: the EPUB conformance checker</name>
+    <description>PUBCheck is the official conformance checker for EPUB publications. EPUBCheck can be run as a standalone command-line tool or used
       as a Java library.</description>
     <url>https://github.com/w3c/epubcheck</url>
     <inceptionYear>2007</inceptionYear>
@@ -33,97 +32,11 @@
     </licenses>
     <developers>
         <developer>
-            <name>Peter Sorotokin</name>
-            <id>sorotokin</id>
-            <email>sorotokin@gmail.com</email>
-            <url>http://www.adobe.com</url>
-            <organization>Adobe Systems Inc.</organization>
-        </developer>
-        <developer>
-            <name>Garth Conboy</name>
-            <id>garthconboy</id>
-            <email>garth@google.com</email>
-        </developer>
-        <developer>
-            <name>Markus Gylling</name>
-            <id>markus.gylling</id>
-            <email>markus.gylling@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Piotr Kula</name>
-            <id>PiotrFKula</id>
-            <email>PiotrFKula@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Paul Norton</name>
-            <id>cold.geek</id>
-            <email>cold.geek@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Liza Daly</name>
-            <id>liza31337</id>
-            <email>liza31337@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Jessica Hekman</name>
-            <id>sorotokin</id>
-            <email>sorotokin@gmail.com</email>
-        </developer>
-        <developer>
-            <name>George Bina</name>
-            <id>georgebina76</id>
-            <email>georgebina76@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Bogdan Iordache</name>
-            <id>biordach</id>
-            <email>biordach@gmail.com</email>
-            <url>http://www.adobe.com</url>
-            <organization>Adobe Systems Inc.</organization>
-        </developer>
-        <developer>
-            <name>Ionut-Maxim Margelatu</name>
-            <id>ionut.margelatu</id>
-            <email>ionut.margelatu@gmail.com</email>
-            <url>http://www.adobe.com</url>
-            <organization>Adobe Systems Inc.</organization>
-        </developer>
-        <developer>
-            <name>Romain Deltour</name>
-            <id>rdeltour</id>
-            <email>rdeltour@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Thomas Ledoux</name>
-            <id>tledoux</id>
-            <email>tledouxfr@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Tobias Fischer</name>
-            <id>tofi86</id>
-            <email>tobias.carl.fischer@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Steve Antoch</name>
-            <id>santoch</id>
-            <url>http://www.barnesandnoble.com/</url>
-            <email>santoch6@gmail.com</email>
-        </developer>
-        <developer>
-            <name>Arwen Pond</name>
-            <id>apond</id>
-            <url>http://www.barnesandnoble.com/</url>
-            <email>arwenpond@hotmail.com</email>
-        </developer>
-        <developer>
-            <name>Masayoshi Takahashi</name>
-            <id>takahashim</id>
-            <email>maki@rubycolor.org</email>
-        </developer>
-        <developer>
-            <name>Satoshi KOJIMA</name>
-            <id>skoji</id>
-            <email>skoji@mac.com</email>
+            <name>DAISY Consortium</name>
+            <id>daisy</id>
+            <email>contact-us@daisy.org</email>
+            <url>https://daisy.org</url>
+            <organization>DAISY Consortium</organization>
         </developer>
     </developers>
     <mailingLists>
@@ -150,8 +63,19 @@
         <url>https://github.com/w3c/epubcheck/issues</url>
     </issueManagement>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <properties>
-        <java.version>1.7</java.version>
+        <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
@@ -160,14 +84,24 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>72.1</version>
+        </dependency>
+        <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
-            <version>9.8.0-8</version>
+            <version>11.4</version>
+        </dependency>
+        <dependency>
+            <groupId>nu.validator</groupId>
+            <artifactId>galimatias</artifactId>
+            <version>0.1.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.20</version>
+            <version>1.21</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.tukaani</groupId>
@@ -194,12 +128,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>24.1.1-android</version>
+            <version>32.0.0-jre</version>
         </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-jpeg</artifactId>
-            <version>3.4.1</version>
+            <version>3.9.4</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
@@ -227,6 +161,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path-assert</artifactId>
+            <version>2.8.0</version>
+        </dependency>
+        <dependency>
             <groupId>xmlunit</groupId>
             <artifactId>xmlunit</artifactId>
             <version>1.3</version>
@@ -235,19 +174,19 @@
         <dependency>
     	        <groupId>io.cucumber</groupId>
     	        <artifactId>cucumber-java</artifactId>
-    	        <version>4.5.4</version>
+    	        <version>7.8.0</version>
     	        <scope>test</scope>
         </dependency>
         <dependency>
     	        <groupId>io.cucumber</groupId>
     	        <artifactId>cucumber-junit</artifactId>
-    	        <version>4.5.4</version>
+    	        <version>7.8.0</version>
     	        <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-picocontainer</artifactId>
-            <version>4.7.1</version>
+            <version>7.8.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -255,6 +194,11 @@
             <artifactId>hamcrest</artifactId>
             <version>2.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.36</version>
         </dependency>
     </dependencies>
 
@@ -333,7 +277,7 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>5.1.8</version>
                 <extensions>true</extensions>
                 <executions>
                     <execution>
@@ -347,7 +291,7 @@
                 <configuration>
                     <instructions>
                         <Import-Package>
-                            net.sf.saxon.*;version="[9.8.0,9.8.1)",
+                            net.sf.saxon.*;version="[11.4.0,11.4.1)",
                             *
                         </Import-Package>
                         <Automatic-Module-Name>org.w3c.epubcheck</Automatic-Module-Name>
@@ -423,7 +367,7 @@
                     <dependency>
                         <groupId>net.sf.saxon</groupId>
                         <artifactId>Saxon-HE</artifactId>
-                        <version>9.4</version>
+                        <version>11.4</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -480,9 +424,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.4.1</version>
                 <configuration>
                   <additionalparam>-Xdoclint:none</additionalparam>
+                  <failOnError>false</failOnError>
                   <source>${java.version}</source>
                 </configuration>
             </plugin>

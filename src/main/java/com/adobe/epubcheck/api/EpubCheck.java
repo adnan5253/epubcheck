@@ -27,28 +27,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
-import java.util.zip.ZipFile;
 
-import com.adobe.epubcheck.ctc.CheckManager;
+import org.w3c.epubcheck.constants.MIMEType;
+import org.w3c.epubcheck.core.Checker;
+import org.w3c.epubcheck.util.url.URLUtils;
+
 import com.adobe.epubcheck.messages.MessageId;
 import com.adobe.epubcheck.ocf.OCFChecker;
-import com.adobe.epubcheck.ocf.OCFPackage;
-import com.adobe.epubcheck.ocf.OCFZipPackage;
-import com.adobe.epubcheck.opf.DocumentValidator;
-import com.adobe.epubcheck.opf.OPFData;
 import com.adobe.epubcheck.opf.ValidationContext.ValidationContextBuilder;
 import com.adobe.epubcheck.util.DefaultReportImpl;
-import com.adobe.epubcheck.util.EPUBVersion;
+import com.adobe.epubcheck.util.FileResourceProvider;
 import com.adobe.epubcheck.util.ResourceUtil;
 import com.adobe.epubcheck.util.WriterReportImpl;
 
 /**
  * Public interface to epub validator.
  */
-public class EpubCheck implements DocumentValidator
+public class EpubCheck implements Checker
 {
   private static String VERSION = null;
   private static String BUILD_DATE = null;
@@ -182,102 +179,49 @@ public class EpubCheck implements DocumentValidator
       }
     }
   }
-  
+
   /**
-   * Allows for a per-instance override of the locale, if supported by the underlying
-   * {@link Report}. Otherwise takes the default host locale.
-   * @param locale The overridden locale. 
+   * Allows for a per-instance override of the locale, if supported by the
+   * underlying {@link Report}. Otherwise takes the default host locale.
+   * 
+   * @param locale
+   *          The overridden locale.
    */
   public void setLocale(Locale locale)
   {
-    if(locale != null && report != null && report instanceof LocalizableReport) 
+    if (locale != null && report != null && report instanceof LocalizableReport)
     {
-      ((LocalizableReport) report).setLocale(locale); 
+      ((LocalizableReport) report).setLocale(locale);
     }
   }
 
   /**
    * Validate the file. Return true if no errors or warnings found.
    */
-  public boolean validate()
+  public void check()
   {
-    int validateResult = doValidate();
-    return validateResult == 0;
+    doValidate();
   }
 
   public int doValidate()
   {
-    ZipFile zip = null;
-    try
+    if (!epubFile.exists())
     {
-      if (!epubFile.exists())
-      {
-        report.message(MessageId.PKG_018, EPUBLocation.create(epubFile.getName()));
-        return 2;
-      }
-
-      zip = new ZipFile(epubFile);
-
-      OCFPackage ocf = new OCFZipPackage(zip);
-      OCFChecker checker = new OCFChecker(new ValidationContextBuilder()
-          .path(epubFile.getAbsolutePath()).ocf(ocf).report(report).profile(profile).build());
-      checker.runChecks();
-
-      String extension = ResourceUtil.getExtension(epubFile.getName());
-      checkExtension(ocf, extension);
-
-      /*** Here are called custom checks (CTC Package) **/
-      CheckManager c = new CheckManager(zip, report);
-      c.checkPackage();
-    } catch (IOException e)
-    {
-      // run ZIP header checks in any case before returning
-      OCFChecker.checkZipHeader(epubFile, report);
-      report.message(MessageId.PKG_008, EPUBLocation.create(epubFile.getName(), ""),
-          e.getMessage());
-    } finally
-    {
-      try
-      {
-        if (zip != null)
-        {
-          zip.close();
-        }
-      } catch (IOException ignored)
-      {
-      }
+      report.message(MessageId.PKG_018, EPUBLocation.of(epubFile));
+      return 2;
     }
+
+    OCFChecker checker = new OCFChecker(new ValidationContextBuilder().url(URLUtils.toURL(epubFile))
+        .mimetype(MIMEType.EPUB.toString())
+        .resourceProvider(new FileResourceProvider(epubFile)).report(report).profile(profile)
+        .build());
+    checker.check();
 
     int returnValue = 0;
     if (report.getFatalErrorCount() != 0) returnValue |= 4;
     if (report.getErrorCount() != 0) returnValue |= 2;
     if (report.getWarningCount() != 0) returnValue |= 1;
     return returnValue;
-  }
-
-  void checkExtension(OCFPackage ocf, String extension)
-  {
-    if (extension != null)
-    {
-      if (!extension.equals("epub"))
-      {
-        if (extension.matches("[Ee][Pp][Uu][Bb]"))
-        {
-          report.message(MessageId.PKG_016, EPUBLocation.create(epubFile.getName()));
-        }
-        else
-        {
-          List<String> opfPaths = ocf.getOcfData().getEntries(OPFData.OPF_MIME_TYPE);
-          if (!opfPaths.isEmpty()) {
-            if(ocf.getOpfData().get(opfPaths.get(0)).getVersion() == EPUBVersion.VERSION_3) {
-              report.message(MessageId.PKG_024, EPUBLocation.create(epubFile.getName(), extension));
-            } else {
-              report.message(MessageId.PKG_017, EPUBLocation.create(epubFile.getName(), extension));
-            }
-          }
-        }
-      }
-    }
   }
 
 }

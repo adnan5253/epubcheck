@@ -1,118 +1,40 @@
 package org.w3c.epubcheck.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Locale;
 
-import com.adobe.epubcheck.api.EPUBProfile;
+import org.w3c.epubcheck.core.Checker;
+import org.w3c.epubcheck.test.TestConfiguration.CheckerMode;
+import org.w3c.epubcheck.util.url.URLUtils;
+
 import com.adobe.epubcheck.api.EpubCheck;
-import com.adobe.epubcheck.api.Report;
-import com.adobe.epubcheck.messages.Severity;
 import com.adobe.epubcheck.nav.NavChecker;
-import com.adobe.epubcheck.opf.DocumentValidator;
-import com.adobe.epubcheck.opf.OPFCheckerFactory;
+import com.adobe.epubcheck.opf.OPFChecker;
+import com.adobe.epubcheck.opf.OPFChecker30;
+import com.adobe.epubcheck.opf.ValidationContext;
 import com.adobe.epubcheck.opf.ValidationContext.ValidationContextBuilder;
 import com.adobe.epubcheck.ops.OPSChecker;
 import com.adobe.epubcheck.overlay.OverlayChecker;
 import com.adobe.epubcheck.util.Archive;
 import com.adobe.epubcheck.util.EPUBVersion;
 import com.adobe.epubcheck.util.FileResourceProvider;
-import com.adobe.epubcheck.util.ReportingLevel;
 
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.And;
-import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
 public class ExecutionSteps
 {
 
-  public enum CheckerMode
-  {
-    EPUB,
-    MEDIA_OVERLAYS_DOC,
-    NAVIGATION_DOC,
-    PACKAGE_DOC,
-    SVG_CONTENT_DOC,
-    XHTML_CONTENT_DOC
-  }
+  private final TestConfiguration configuration;
 
-  private final TestReport report;
-  private String basepath = "";
-  private CheckerMode mode = CheckerMode.EPUB;
-  private EPUBVersion version = EPUBVersion.VERSION_3;
-  private EPUBProfile profile = EPUBProfile.DEFAULT;
-  private Locale defaultLocale = Locale.ENGLISH;
-
-  public ExecutionSteps(TestReport report)
+  public ExecutionSteps(TestConfiguration configuration)
   {
-    this.report = report;
-  }
-
-  @Before("@debug")
-  public void beforeDebug()
-  {
-    report.setVerbose(true);
-  }
-
-  @After("@debug")
-  public void afterDebug()
-  {
-    report.setVerbose(false);
-  }
-
-  @Given("(EPUB )test files located at {string}")
-  public void setBasePath(String path)
-  {
-    this.basepath = path;
-  }
-
-  @And("EPUBCheck with default settings")
-  public void configureDefaults()
-  {
-    // nothing to do
-  }
-
-  @And("EPUBCheck configured to check EPUB {version} rules")
-  public void configureEPUBVersion(EPUBVersion version)
-  {
-    this.version = version;
-  }
-
-  @And("EPUBCheck configured to check a(n) {checkerMode}")
-  public void configureCheckerMode(ExecutionSteps.CheckerMode mode)
-  {
-    this.mode = mode;
-  }
-
-  @And("EPUBCheck configured with the ('){profile}(') profile")
-  public void configureProfile(EPUBProfile profile)
-  {
-    this.profile = profile;
-  }
-
-  @And("(the) default locale (is )set to ('){locale}(')")
-  public void configureDefaultLevel(Locale locale)
-  {
-    this.defaultLocale = locale;
-  }
-
-  @And("(the) reporting level (is )set to {severity}")
-  public void configureReportingLevel(Severity severity)
-  {
-    report.setReportingLevel(ReportingLevel.getReportingLevel(severity));
-  }
-
-  @And("(the) reporting locale (is )set to ('){locale}(')")
-  public void configureReportingLocale(Locale locale)
-  {
-    report.setLocale(locale);
+    this.configuration = configuration;
   }
 
   @When("checking EPUB/file/document {string}")
@@ -121,49 +43,55 @@ public class ExecutionSteps
     Locale oldDefaultLocale = Locale.getDefault();
     try
     {
-      Locale.setDefault(defaultLocale);
-      File testFile = getEPUBFile(basepath + path);
-      DocumentValidator checker = getChecker(mode, testFile, version, profile, report);
-      checker.validate();
+      // Complete configuration and get the test file 
+      Locale.setDefault(configuration.getDefaultLocale());
+      if (configuration.getMode() == null)
+      {
+        configuration.setMode(CheckerMode.fromExtension(path));
+      }
+      File testFile = getEPUBFile(configuration.getBasepath() + path);
+      
+      // Initialize the report
+      configuration.getReport().setEpubFileName(testFile.getAbsolutePath());
+      configuration.getReport().initialize();
+      
+      // Create the checker and run checks
+      Checker checker = getChecker(testFile);
+      checker.check();
+      
+      // Finalize the report
+      configuration.getReport().generate();
     } finally
     {
       Locale.setDefault(oldDefaultLocale);
     }
   }
 
-  private DocumentValidator getChecker(CheckerMode mode, File file, EPUBVersion version,
-      EPUBProfile profile, Report report)
+  private Checker getChecker(File file)
   {
-    switch (mode)
+
+    ValidationContextBuilder contextBuilder = configuration.getContextBuilder()
+        .url(URLUtils.toURL(file)).resourceProvider(new FileResourceProvider(file));
+
+    switch (configuration.getMode())
     {
     case MEDIA_OVERLAYS_DOC:
       return new OverlayChecker(
-          new ValidationContextBuilder().path(file.getPath()).mimetype("application/smil+xml")
-              .resourceProvider(new FileResourceProvider(file.getPath())).report(report)
-              .version(EPUBVersion.VERSION_3).profile(profile).build());
+          contextBuilder.mimetype("application/smil+xml").version(EPUBVersion.VERSION_3).build());
     case NAVIGATION_DOC:
       return new NavChecker(
-          new ValidationContextBuilder().path(file.getPath()).mimetype("application/xhtml+xml")
-              .resourceProvider(new FileResourceProvider(file.getPath())).report(report)
-              .version(EPUBVersion.VERSION_3).profile(profile).build());
+          contextBuilder.mimetype("application/xhtml+xml").version(EPUBVersion.VERSION_3).build());
     case PACKAGE_DOC:
-      return OPFCheckerFactory.getInstance()
-          .newInstance(new ValidationContextBuilder().path(file.getPath())
-              .mimetype("application/oebps-package+xml")
-              .resourceProvider(new FileResourceProvider(file.getPath())).report(report)
-              .version(version).profile(profile).build());
+      ValidationContext context = contextBuilder.mimetype("application/oebps-package+xml").build();
+      return (context.version == EPUBVersion.VERSION_2) ? new OPFChecker(context)
+          : new OPFChecker30(context);
     case SVG_CONTENT_DOC:
-      return new OPSChecker(new ValidationContextBuilder().path(file.getPath())
-          .mimetype("image/svg+xml").resourceProvider(new FileResourceProvider(file.getPath()))
-          .report(report).version(version).profile(profile).build());
+      return new OPSChecker(contextBuilder.mimetype("image/svg+xml").build());
     case XHTML_CONTENT_DOC:
-      return new OPSChecker(
-          new ValidationContextBuilder().path(file.getPath()).mimetype("application/xhtml+xml")
-              .resourceProvider(new FileResourceProvider(file.getPath())).report(report)
-              .version(version).profile(profile).build());
+      return new OPSChecker(contextBuilder.mimetype("application/xhtml+xml").build());
     case EPUB:
     default:
-      return new EpubCheck(file, report, profile);
+      return new EpubCheck(file, configuration.getReport(), configuration.getProfile());
     }
   }
 

@@ -26,16 +26,17 @@
    opf.epub3.meta.content = (opf.property.attr & opf.refines.attr? & opf.id.attr? & opf.scheme.attr? & opf.i18n.attrs & datatype.string.nonempty)
    opf.epub2.meta.content = (attribute name { text } & attribute content { text })  #legacy
    
-   opf.link = element link { opf.href.attr & opf.rel.attr & opf.id.attr? & opf.refines.attr? & opf.media-type.attr? & opf.properties.attr? }         
+   opf.link = element link { opf.href.attr & opf.hreflang.attr? & opf.rel.attr & opf.id.attr? & opf.refines.attr? & opf.media-type.attr? & opf.properties.attr? }         
       
    opf.property.attr = attribute property { datatype.property }
    opf.rel.attr = attribute rel { datatype.properties }
+   opf.hreflang.attr = attribute hreflang { "" | datatype.languagecode }
    opf.scheme.attr = attribute scheme { datatype.property }
    opf.refines.attr = attribute refines { datatype.URI }
    
    opf.dc.identifier = element dc:identifier { opf.id.attr? & datatype.string.nonempty } 
    opf.dc.title = element dc:title { opf.dc.attlist & datatype.string.nonempty }
-   opf.dc.language = element dc:language { opf.id.attr? & datatype.languagecode }
+   opf.dc.language = element dc:language { opf.id.attr? & datatype.string.nonempty }
    opf.dc.date = element dc:date { opf.id.attr? & datatype.string.nonempty }
    opf.dc.source = element dc:source { opf.dc.attlist & datatype.string.nonempty }
    opf.dc.type = element dc:type { opf.id.attr? & datatype.string.nonempty }
@@ -128,5 +129,5 @@
    opf.href.attr = attribute href { datatype.URI }
    opf.id.attr = attribute id { datatype.ID }
    opf.i18n.attrs = opf.xml.lang.attr? & opf.dir.attr?
-   opf.xml.lang.attr = attribute xml:lang { datatype.languagecode }
-   opf.dir.attr = attribute dir { 'ltr' | 'rtl' }
+   opf.xml.lang.attr = attribute xml:lang { "" | datatype.languagecode }
+   opf.dir.attr = attribute dir { 'ltr' | 'rtl' | 'auto' }

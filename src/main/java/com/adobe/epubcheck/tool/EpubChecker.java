@@ -34,19 +34,22 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.w3c.epubcheck.core.Checker;
+import org.w3c.epubcheck.util.url.URLUtils;
+
 import com.adobe.epubcheck.api.EPUBProfile;
 import com.adobe.epubcheck.api.EpubCheck;
 import com.adobe.epubcheck.api.EpubCheckFactory;
 import com.adobe.epubcheck.api.LocalizableReport;
 import com.adobe.epubcheck.api.Report;
 import com.adobe.epubcheck.messages.MessageDictionaryDumper;
-import com.adobe.epubcheck.nav.NavCheckerFactory;
-import com.adobe.epubcheck.opf.DocumentValidator;
-import com.adobe.epubcheck.opf.DocumentValidatorFactory;
-import com.adobe.epubcheck.opf.OPFCheckerFactory;
+import com.adobe.epubcheck.nav.NavChecker;
+import com.adobe.epubcheck.opf.OPFChecker;
+import com.adobe.epubcheck.opf.OPFChecker30;
+import com.adobe.epubcheck.opf.ValidationContext;
 import com.adobe.epubcheck.opf.ValidationContext.ValidationContextBuilder;
-import com.adobe.epubcheck.ops.OPSCheckerFactory;
-import com.adobe.epubcheck.overlay.OverlayCheckerFactory;
+import com.adobe.epubcheck.ops.OPSChecker;
+import com.adobe.epubcheck.overlay.OverlayChecker;
 import com.adobe.epubcheck.reporting.CheckingReport;
 import com.adobe.epubcheck.util.Archive;
 import com.adobe.epubcheck.util.DefaultReportImpl;
@@ -62,6 +65,9 @@ import com.adobe.epubcheck.util.URLResourceProvider;
 import com.adobe.epubcheck.util.XmlReportImpl;
 import com.adobe.epubcheck.util.XmpReportImpl;
 import com.adobe.epubcheck.util.outWriter;
+
+import io.mola.galimatias.GalimatiasParseException;
+import io.mola.galimatias.URL;
 
 public class EpubChecker
 {
@@ -86,6 +92,7 @@ public class EpubChecker
   File listChecksOut;
   File customMessageFile;
   boolean listChecks = false;
+  boolean displayHelpOrVersion = false;
   boolean useCustomMessageFile = false;
   boolean failOnWarnings = false;
   private Messages messages = Messages.getInstance();
@@ -94,7 +101,6 @@ public class EpubChecker
   int reportingLevel = ReportingLevel.Info;
 
   private static final HashMap<OPSType, String> modeMimeTypeMap;
-  private static final HashMap<OPSType, DocumentValidatorFactory> documentValidatorFactoryMap;
   private static final String EPUBCHECK_CUSTOM_MESSAGE_FILE = "ePubCheckCustomMessageFile";
 
   static
@@ -110,24 +116,6 @@ public class EpubChecker
     map.put(new OPSType("mo", EPUBVersion.VERSION_3), "application/smil+xml");
     map.put(new OPSType("nav", EPUBVersion.VERSION_3), "application/xhtml+xml");
     modeMimeTypeMap = map;
-  }
-
-
-  static
-  {
-    HashMap<OPSType, DocumentValidatorFactory> map = new HashMap<OPSType, DocumentValidatorFactory>();
-    map.put(new OPSType(null, EPUBVersion.VERSION_2), EpubCheckFactory.getInstance());
-    map.put(new OPSType(null, EPUBVersion.VERSION_3), EpubCheckFactory.getInstance());
-    map.put(new OPSType("opf", EPUBVersion.VERSION_2), OPFCheckerFactory.getInstance());
-    map.put(new OPSType("opf", EPUBVersion.VERSION_3), OPFCheckerFactory.getInstance());
-    map.put(new OPSType("xhtml", EPUBVersion.VERSION_2), OPSCheckerFactory.getInstance());
-    map.put(new OPSType("xhtml", EPUBVersion.VERSION_3), OPSCheckerFactory.getInstance());
-    map.put(new OPSType("svg", EPUBVersion.VERSION_2), OPSCheckerFactory.getInstance());
-    map.put(new OPSType("svg", EPUBVersion.VERSION_3), OPSCheckerFactory.getInstance());
-    map.put(new OPSType("mo", EPUBVersion.VERSION_3), OverlayCheckerFactory.getInstance());
-    map.put(new OPSType("nav", EPUBVersion.VERSION_3), NavCheckerFactory.getInstance());
-
-    documentValidatorFactoryMap = map;
   }
 
   public Locale getLocale() {
@@ -149,6 +137,10 @@ public class EpubChecker
         if (listChecks)
         {
           dumpMessageDictionary(report);
+          return 0;
+        }
+        if (displayHelpOrVersion)
+        {
           return 0;
         }
         if (useCustomMessageFile)
@@ -180,17 +172,27 @@ public class EpubChecker
   int validateFile(String path, EPUBVersion version, Report report, EPUBProfile profile)
   {
     GenericResourceProvider resourceProvider;
-
+    URL url;
     if (path.startsWith("http://") || path.startsWith("https://"))
     {
-      resourceProvider = new URLResourceProvider(path);
+      try
+      {
+        url = URL.parse(path);
+        resourceProvider = new URLResourceProvider();
+      } catch (GalimatiasParseException e)
+      {
+        //FIXME 2022 add dedicate message
+        System.err.println(String.format(messages.get("file_not_found"), path));
+        return 1;
+      }
     }
     else
     {
       File f = new File(path);
       if (f.exists())
       {
-        resourceProvider = new FileResourceProvider(path);
+        url = URLUtils.toURL(f);
+        resourceProvider = new FileResourceProvider(f);
       }
       else
       {
@@ -201,9 +203,39 @@ public class EpubChecker
 
     OPSType opsType = new OPSType(mode, version);
 
-    DocumentValidatorFactory factory = documentValidatorFactoryMap.get(opsType);
-
-    if (factory == null)
+    ValidationContext context = new ValidationContextBuilder().url(url)
+        .report(report).resourceProvider(resourceProvider).mimetype(modeMimeTypeMap.get(opsType))
+        .version(version).profile(profile).build();
+    
+    Checker checker = null;
+    if (mode == null) {
+      checker = EpubCheckFactory.getInstance().newInstance(context);
+    } else {
+      switch (mode)
+      {
+      case "opf":
+        if (version == EPUBVersion.VERSION_2) {
+          checker = new OPFChecker(context);
+        } else {
+          checker = new OPFChecker30(context);
+        }
+        break;
+      case "xhtml":
+      case "svg":
+        checker = new OPSChecker(context);
+        break;
+      case "mo":
+        if (version == EPUBVersion.VERSION_3) checker = new OverlayChecker(context);
+        break;
+      case "nav":
+        if (version == EPUBVersion.VERSION_3) checker = new NavChecker(context);
+        break;
+      default:
+        break;
+      }
+    }
+    
+    if (checker == null)
     {
       outWriter.println(messages.get("display_help"));
       System.err.println(String.format(messages.get("mode_version_not_supported"), mode, version));
@@ -212,13 +244,10 @@ public class EpubChecker
           version));
     }
 
-    DocumentValidator check = factory.newInstance(new ValidationContextBuilder().path(path)
-        .report(report).resourceProvider(resourceProvider).mimetype(modeMimeTypeMap.get(opsType))
-        .version(version).profile(profile).build());
 
-    if (check.getClass() == EpubCheck.class)
+    if (checker.getClass() == EpubCheck.class)
     {
-      int validationResult = ((EpubCheck) check).doValidate();
+      int validationResult = ((EpubCheck) checker).doValidate();
       if (validationResult == 0)
       {
         outWriter.println(messages.get("no_errors__or_warnings"));
@@ -234,8 +263,8 @@ public class EpubChecker
     }
     else
     {
-      boolean validationResult = check.validate();
-      if (validationResult)
+      checker.check();
+      if (report.getWarningCount() == 0 && report.getFatalErrorCount() == 0 && report.getErrorCount() == 0)
       {
         outWriter.println(messages.get("no_errors__or_warnings"));
         return 0;
@@ -406,11 +435,7 @@ public class EpubChecker
     {
       report = new DefaultReportImpl("none");
     }
-    else if (jsonOutput)
-    {
-      report = new CheckingReport(path, (fileOut == null) ? null : fileOut.getPath());
-    }
-    else if (xmlOutput)
+    else if (jsonOutput | xmpOutput | xmlOutput)
     {
       PrintWriter pw = null;
       if (fileOut == null)
@@ -421,20 +446,13 @@ public class EpubChecker
       {
         pw = new PrintWriter(fileOut, "UTF-8");
       }
-      report = new XmlReportImpl(pw, path, EpubCheck.version());
-    }
-    else if (xmpOutput)
-    {
-      PrintWriter pw = null;
-      if (fileOut == null)
-      {
-        pw = new PrintWriter(System.out, true);
+      if (xmlOutput) {
+        report = new XmlReportImpl(pw, path, EpubCheck.version());
+      } else if (xmpOutput) {
+        report = new XmpReportImpl(pw, path, EpubCheck.version());
+      } else {
+        report = new CheckingReport(pw, path);
       }
-      else
-      {
-        pw = new PrintWriter(fileOut, "UTF-8");
-      }
-      report = new XmpReportImpl(pw, path, EpubCheck.version());
     }
     else
     {
@@ -474,7 +492,7 @@ public class EpubChecker
     setCustomMessageFileFromEnvironment();
 
     Pattern argPattern = Pattern.compile("--?(.*)");
-
+    
     for (int i = 0; i < args.length; i++)
     {
       Matcher argMatch = argPattern.matcher(args[i]);
@@ -725,9 +743,11 @@ public class EpubChecker
           case "?":
           case "help":
               displayHelp(); // display help message
+              displayHelpOrVersion = true;
             break;
           case "version":
             displayVersion();
+            displayHelpOrVersion = true;
             break;
           default:
               System.err.println(String.format(messages.get("unrecognized_argument"), args[i]));
@@ -776,7 +796,7 @@ public class EpubChecker
 
     if (path == null)
     {
-      if (listChecks)
+      if (listChecks || displayHelpOrVersion)
       {
         return true;
       }

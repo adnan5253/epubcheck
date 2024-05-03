@@ -152,11 +152,6 @@
         <param name="descendant" value="h:label"/>
     </pattern>
 
-    <pattern id="descendant-svgtitle-svg" is-a="disallowed-descendants">
-        <param name="ancestor" value="svg:title"/>
-        <param name="descendant" value="svg:*"/>
-    </pattern>
-
     <pattern id="bdo-dir" is-a="required-attr">
         <param name="elem" value="h:bdo"/>
         <param name="attr" value="dir"/>
@@ -401,7 +396,14 @@
                     select="local-name(ancestor::$ancestor)"/> elements.</report>
         </rule>
     </pattern>
-
-    <include href="./mod/epub-svg11-re.sch"/>
+    
+    <pattern id="dpub-aria.doc-endnote.deprecated">
+        <rule context="h:*[@role]">
+            <report test="tokenize(@role,'\s+')='doc-endnote'"
+                >WARNING: The "doc-endnote" role is deprecated and should not be used.</report>
+            <report test="tokenize(@role,'\s+')='doc-biblioentry'"
+                >WARNING: The "doc-biblioentry" role is deprecated and should not be used.</report>
+        </rule>
+    </pattern>
 
 </schema>
